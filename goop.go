@@ -9,31 +9,40 @@ package goop
 
 import "reflect"
 
-// A goop.Object is a lot like a JavaScript object.
-type Object struct {
+type true_object struct {
 	symbol_table map[string]interface{} // Map from a method name to a method value
 }
 
-// Create a new object with no methods defined on it.
-func New() *Object {
-	return &Object{symbol_table: make(map[string]interface{})}
+// A goop.Object is a lot like a JavaScript object.
+type Object struct {
+	Implementation true_object
+}
+
+// Initialize an object on first use.
+func (obj *Object) initialize_if_necessary() {
+	if obj.Implementation.symbol_table == nil {
+		obj.Implementation.symbol_table = make(map[string]interface{})
+	}
 }
 
 // Assign a value to a member name.
-func (obj Object) Set(memberName string, value interface{}) {
-	obj.symbol_table[memberName] = value
+func (obj *Object) Set(memberName string, value interface{}) {
+	obj.initialize_if_necessary()
+	obj.Implementation.symbol_table[memberName] = value
 }
 
 // Return the value associated with a member name.
-func (obj Object) Get(memberName string) (value interface{}) {
-	value = obj.symbol_table[memberName]
+func (obj *Object) Get(memberName string) (value interface{}) {
+	obj.initialize_if_necessary()
+	value = obj.Implementation.symbol_table[memberName]
 	return
 }
 
 // Invoke a method on an object and return a slice of return values.
-func (obj Object) Call(methodName string, arguments ...interface{}) []interface{} {
+func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments.
-	userFuncIface := obj.symbol_table[methodName]
+	obj.initialize_if_necessary()
+	userFuncIface := obj.Implementation.symbol_table[methodName]
 	userFunc := reflect.ValueOf(userFuncIface)
 	userFuncArgs := make([]reflect.Value, len(arguments))
 	for i, argIface := range arguments {
