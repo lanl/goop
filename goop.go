@@ -9,13 +9,14 @@ package goop
 
 import "reflect"
 
-type true_object struct {
+// An object is represented internally as a struct.
+type internal struct {
 	symbol_table map[string]interface{} // Map from a method name to a method value
 }
 
 // A goop.Object is a lot like a JavaScript object.
 type Object struct {
-	Implementation true_object
+	Implementation internal    // Internal representation not exposed to the user
 }
 
 // Initialize an object on first use.
@@ -44,9 +45,10 @@ func (obj *Object) Call(methodName string, arguments ...interface{}) []interface
 	obj.initialize_if_necessary()
 	userFuncIface := obj.Implementation.symbol_table[methodName]
 	userFunc := reflect.ValueOf(userFuncIface)
-	userFuncArgs := make([]reflect.Value, len(arguments))
+	userFuncArgs := make([]reflect.Value, len(arguments)+1)
+	userFuncArgs[0] = reflect.ValueOf(*obj)
 	for i, argIface := range arguments {
-		userFuncArgs[i] = reflect.ValueOf(argIface)
+		userFuncArgs[i+1] = reflect.ValueOf(argIface)
 	}
 
 	// Call the function and return the results.
