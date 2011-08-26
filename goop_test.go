@@ -26,12 +26,27 @@ func TestDoNothingFunction(t *testing.T) {
 	obj.Call("doNothing")
 }
 
-// Test setting and invoking a function that returns its argument doubled.
+// Test invoking a method that returns its argument doubled.
 func TestDoubleFunction(t *testing.T) {
 	var obj Object
-	obj.Set("doubleIt", func(self Object, x int) int {return x*2})
+	obj.Set("doubleIt", func(self Object, x int) int { return x * 2 })
 	value := 123
 	result := obj.Call("doubleIt", value)[0].(int)
+	if result != value*2 {
+		t.Fatalf("Expected %d but saw %v", value*2, result)
+	}
+}
+
+// Test invoking a method that modifies object state.
+func TestModifyObj(t *testing.T) {
+	var obj Object
+	value := 100
+	obj.Set("x", value)
+	obj.Set("doubleX", func(self Object) {
+		self.Set("x", self.Get("x").(int)*2)
+	})
+	obj.Call("doubleX")
+	result := obj.Get("x").(int)
 	if result != value*2 {
 		t.Fatalf("Expected %d but saw %v", value*2, result)
 	}

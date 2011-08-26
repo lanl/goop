@@ -16,30 +16,31 @@ type internal struct {
 
 // A goop.Object is a lot like a JavaScript object.
 type Object struct {
-	Implementation internal    // Internal representation not exposed to the user
+	Implementation *internal // Internal representation not exposed to the user
 }
 
 // Initialize an object on first use.
 func (obj *Object) initialize_if_necessary() {
-	if obj.Implementation.symbol_table == nil {
+	if obj.Implementation == nil {
+		obj.Implementation = &internal{}
 		obj.Implementation.symbol_table = make(map[string]interface{})
 	}
 }
 
-// Assign a value to a member name.
+// Assign a value to the name of an object member.
 func (obj *Object) Set(memberName string, value interface{}) {
 	obj.initialize_if_necessary()
 	obj.Implementation.symbol_table[memberName] = value
 }
 
-// Return the value associated with a member name.
+// Return the value associated with the name of an object member.
 func (obj *Object) Get(memberName string) (value interface{}) {
 	obj.initialize_if_necessary()
 	value = obj.Implementation.symbol_table[memberName]
 	return
 }
 
-// Invoke a method on an object and return a slice of return values.
+// Invoke a method on an object and return the method's return values as a slice.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments.
 	obj.initialize_if_necessary()
