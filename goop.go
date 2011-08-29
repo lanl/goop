@@ -19,23 +19,21 @@ type Object struct {
 	Implementation *internal // Internal representation not exposed to the user
 }
 
-// Initialize an object on first use.
-func (obj *Object) initialize_if_necessary() {
-	if obj.Implementation == nil {
-		obj.Implementation = &internal{}
-		obj.Implementation.symbol_table = make(map[string]interface{})
-	}
+// Allocate and return a new object.
+func New() Object {
+	obj := Object{}
+	obj.Implementation = &internal{}
+	obj.Implementation.symbol_table = make(map[string]interface{})
+	return obj
 }
 
 // Assign a value to the name of an object member.
 func (obj *Object) Set(memberName string, value interface{}) {
-	obj.initialize_if_necessary()
 	obj.Implementation.symbol_table[memberName] = value
 }
 
 // Return the value associated with the name of an object member.
 func (obj *Object) Get(memberName string) (value interface{}) {
-	obj.initialize_if_necessary()
 	value = obj.Implementation.symbol_table[memberName]
 	return
 }
@@ -43,7 +41,6 @@ func (obj *Object) Get(memberName string) (value interface{}) {
 // Invoke a method on an object and return the method's return values as a slice.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments.
-	obj.initialize_if_necessary()
 	userFuncIface := obj.Implementation.symbol_table[methodName]
 	userFunc := reflect.ValueOf(userFuncIface)
 	userFuncArgs := make([]reflect.Value, len(arguments)+1)
