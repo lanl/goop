@@ -31,6 +31,15 @@ func TestMultipleAssign(t *testing.T) {
 	}
 }
 
+// Test retrieving a nonexistent scalar value.
+func TestNonexistent(t *testing.T) {
+	var obj Object = New()
+	x := obj.Get("bogus")
+	if x != NotFound {
+		t.Fatalf("Expectedly found member \"bogus\"")
+	}
+}
+
 // Test creating and invoking a do-nothing method with no function
 // arguments or return value.
 func TestDoNothingFunction(t *testing.T) {

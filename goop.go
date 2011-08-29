@@ -11,8 +11,15 @@ import "reflect"
 
 // An object is represented internally as a struct.
 type internal struct {
-	symbol_table map[string]interface{} // Map from a method name to a method value
+	symbolTable map[string]interface{} // Map from a method name to a method value
 }
+
+// A goop.Error is used for producing return values that are
+// differently typed from all user types.
+type Error string
+
+// A Get() call that fails to find the specified member returns goop.NotFound.
+const NotFound = Error("Member not found")
 
 // A goop.Object is a lot like a JavaScript object.
 type Object struct {
@@ -23,35 +30,38 @@ type Object struct {
 func New() Object {
 	obj := Object{}
 	obj.Implementation = &internal{}
-	obj.Implementation.symbol_table = make(map[string]interface{})
+	obj.Implementation.symbolTable = make(map[string]interface{})
 	return obj
 }
 
 // Assign a value to the name of an object member.
 func (obj *Object) Set(memberName string, value interface{}) {
-	obj.Implementation.symbol_table[memberName] = value
+	obj.Implementation.symbolTable[memberName] = value
 }
 
 // Return the value associated with the name of an object member.
 func (obj *Object) Get(memberName string) (value interface{}) {
-	value = obj.Implementation.symbol_table[memberName]
-	return
+	var ok bool
+	if value, ok = obj.Implementation.symbolTable[memberName]; ok {
+		return value
+	}
+	return NotFound
 }
 
 // Remove a member from an object.  This function always succeeds,
 // even if the member did not previously exist.
 func (obj *Object) Unset(memberName string) {
-	obj.Implementation.symbol_table[memberName] = 0, false
+	obj.Implementation.symbolTable[memberName] = 0, false
 }
 
-// Return an iterable map of all members of an object.  If the
-// argument is true, also include methods.
+// Return a map of all members of an object (useful for iteration).
+// If the argument is true, also include method functions.
 func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
 	// Copy our internal structure to prevent the caller from
 	// modifying it without our knowledge.
-	symbol_table := obj.Implementation.symbol_table
-	resultMap := make(map[string]interface{}, len(symbol_table))
-	for key, val := range symbol_table {
+	symbolTable := obj.Implementation.symbolTable
+	resultMap := make(map[string]interface{}, len(symbolTable))
+	for key, val := range symbolTable {
 		if alsoMethods || reflect.ValueOf(val).Kind() != reflect.Func {
 			resultMap[key] = val
 		}
@@ -62,7 +72,7 @@ func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
 // Invoke a method on an object and return the method's return values as a slice.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments.
-	userFuncIface := obj.Implementation.symbol_table[methodName]
+	userFuncIface := obj.Implementation.symbolTable[methodName]
 	userFunc := reflect.ValueOf(userFuncIface)
 	userFuncArgs := make([]reflect.Value, len(arguments)+1)
 	userFuncArgs[0] = reflect.ValueOf(*obj)
