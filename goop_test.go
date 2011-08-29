@@ -122,3 +122,33 @@ func TestIteration(t *testing.T) {
 		}
 	}
 }
+
+// Test single-parent inheritance.
+func TestSimpleInheritance(t *testing.T) {
+	// Test 1: Ensure that Get() finds members in our parent.
+	point2D := New()
+	point2D.Set("x", 2)
+	point2D.Set("y", 4)
+	point3D := New(point2D)
+	point3D.Set("z", 8)
+	expectedTotal := 2 + 4 + 8
+	total := point3D.Get("x").(int) + point3D.Get("y").(int) + point3D.Get("z").(int)
+	if total != expectedTotal {
+		t.Fatalf("Expected %d from Get() but saw %d", expectedTotal, total)
+	}
+
+	// Test 2: Ensure that Contents() finds members in our parent.
+	point2D.Set("x", point2D.Get("x").(int)+10)
+	total = 0
+	for key, value := range point3D.Contents(false) {
+		switch key {
+		case "x", "y", "z":
+			total += value.(int)
+		default:
+			t.Fatalf("Did not expect key \"%s\", value %v", key, value)
+		}
+	}
+	if total != expectedTotal+10 {
+		t.Fatalf("Expected %d from Contents() but saw %d", expectedTotal, total)
+	}
+}

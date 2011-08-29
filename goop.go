@@ -8,10 +8,12 @@ constructs in Go, much like those that appear in JavaScript.
 package goop
 
 import "reflect"
+import "container/vector"
 
 // An object is represented internally as a struct.
 type internal struct {
-	symbolTable map[string]interface{} // Map from a method name to a method value
+	symbolTable map[string]interface{} // Map from a member name to a member value
+	prototypes  vector.Vector          // List of other objects to search for members
 }
 
 // A goop.Error is used for producing return values that are
@@ -27,10 +29,13 @@ type Object struct {
 }
 
 // Allocate and return a new object.
-func New() Object {
+func New(parentList ...Object) Object {
 	obj := Object{}
 	obj.Implementation = &internal{}
 	obj.Implementation.symbolTable = make(map[string]interface{})
+	for _, parent := range parentList {
+		obj.Implementation.prototypes.Push(parent)
+	}
 	return obj
 }
 
@@ -41,11 +46,24 @@ func (obj *Object) Set(memberName string, value interface{}) {
 
 // Return the value associated with the name of an object member.
 func (obj *Object) Get(memberName string) (value interface{}) {
+	// Search our local members.
 	var ok bool
 	if value, ok = obj.Implementation.symbolTable[memberName]; ok {
 		return value
 	}
-	return NotFound
+
+	// We didn't find the given member locally.  Try each of our
+	// parents in turn.
+	value = NotFound
+	for _, parent := range obj.Implementation.prototypes {
+		parentObj := parent.(Object)
+		parentValue := parentObj.Get(memberName)
+		if parentValue != NotFound {
+			value = parentValue
+			return
+		}
+	}
+	return
 }
 
 // Remove a member from an object.  This function always succeeds,
@@ -57,11 +75,19 @@ func (obj *Object) Unset(memberName string) {
 // Return a map of all members of an object (useful for iteration).
 // If the argument is true, also include method functions.
 func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
-	// Copy our internal structure to prevent the caller from
-	// modifying it without our knowledge.
-	symbolTable := obj.Implementation.symbolTable
-	resultMap := make(map[string]interface{}, len(symbolTable))
-	for key, val := range symbolTable {
+	// Copy our parents' data in reverse order so ancestor's
+	// members are correctly overridden.
+	impl := obj.Implementation
+	resultMap := make(map[string]interface{}, len(impl.symbolTable))
+	for i := impl.prototypes.Len() - 1; i >= 0; i-- {
+		parentObj := impl.prototypes.At(i).(Object)
+		for key, val := range parentObj.Contents(alsoMethods) {
+			resultMap[key] = val
+		}
+	}
+
+	// Finally, copy our own object-specific data.
+	for key, val := range impl.symbolTable {
 		if alsoMethods || reflect.ValueOf(val).Kind() != reflect.Func {
 			resultMap[key] = val
 		}
