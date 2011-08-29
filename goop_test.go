@@ -18,6 +18,19 @@ func TestSimpleValues(t *testing.T) {
 	}
 }
 
+// Test multiply setting and retrieving a scalar value.
+func TestMultipleAssign(t *testing.T) {
+	value := 123
+	var obj Object = New()
+	obj.Set("x", value)
+	value *= 2
+	obj.Set("x", value)
+	x := obj.Get("x").(int)
+	if x != value {
+		t.Fatalf("Expected %d but saw %v", value, x)
+	}
+}
+
 // Test creating and invoking a do-nothing method with no function
 // arguments or return value.
 func TestDoNothingFunction(t *testing.T) {
@@ -49,5 +62,54 @@ func TestModifyObj(t *testing.T) {
 	result := obj.Get("x").(int)
 	if result != value*2 {
 		t.Fatalf("Expected %d but saw %v", value*2, result)
+	}
+}
+
+// Test iterating over all members.
+func TestIteration(t *testing.T) {
+	// Add various datatypes to an object.
+	var obj Object = New()
+	v_int := uint(2520)
+	v_fp := float64(867.5309)
+	v_str := "Yow!"
+	obj.Set("integer", v_int)
+	obj.Set("fp", v_fp)
+	obj.Set("string", v_str)
+	obj.Set("function", func() uint { return v_int })
+
+	// Define a generic test for the above.
+	test_contents := func(key string, value interface{}) {
+		switch key {
+		case "integer":
+			if value.(uint) != v_int {
+				t.Fatalf("Expected %d but saw %v", v_int, value)
+			}
+		case "fp":
+			if value.(float64) != v_fp {
+				t.Fatalf("Expected %.4f but saw %v", v_fp, value)
+			}
+		case "string":
+			if value.(string) != v_str {
+				t.Fatalf("Expected \"%s\" but saw %v", v_str, value)
+			}
+		default:
+			t.Fatalf("Did not expect key \"%s\", value %v", key, value)
+		}
+	}
+
+	// Test Contents(false).
+	for key, value := range obj.Contents(false) {
+		test_contents(key, value)
+	}
+
+	// Test Contents(true).
+	for key, value := range obj.Contents(true) {
+		if key == "function" {
+			if funcResult := value.(func() uint)(); funcResult != v_int {
+				t.Fatalf("Expected function \"%s\" to return %d, not %v", key, v_int, funcResult)
+			}
+		} else {
+			test_contents(key, value)
+		}
 	}
 }

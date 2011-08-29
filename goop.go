@@ -38,6 +38,27 @@ func (obj *Object) Get(memberName string) (value interface{}) {
 	return
 }
 
+// Remove a member from an object.  This function always succeeds,
+// even if the member did not previously exist.
+func (obj *Object) Unset(memberName string) {
+	obj.Implementation.symbol_table[memberName] = 0, false
+}
+
+// Return an iterable map of all members of an object.  If the
+// argument is true, also include methods.
+func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
+	// Copy our internal structure to prevent the caller from
+	// modifying it without our knowledge.
+	symbol_table := obj.Implementation.symbol_table
+	resultMap := make(map[string]interface{}, len(symbol_table))
+	for key, val := range symbol_table {
+		if alsoMethods || reflect.ValueOf(val).Kind() != reflect.Func {
+			resultMap[key] = val
+		}
+	}
+	return resultMap
+}
+
 // Invoke a method on an object and return the method's return values as a slice.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments.
