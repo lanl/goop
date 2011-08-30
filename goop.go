@@ -28,20 +28,59 @@ type Object struct {
 	Implementation *internal // Internal representation not exposed to the user
 }
 
-// Allocate and return a new object, basing it off zero or more
-// prototype objects.
-func New(parentList ...Object) Object {
+// Allocate and return a new object, optionally given a constructor
+// function and constructor arguments.
+func New(constructor ...interface{}) Object {
+	// Allocate and initialize a new object.
 	obj := Object{}
 	obj.Implementation = &internal{}
 	obj.Implementation.symbolTable = make(map[string]interface{})
-	for _, parent := range parentList {
-		obj.Implementation.prototypes.Push(parent)
+
+	// If we weren't given a constructor, we have nothing left to
+	// do.
+	if len(constructor) == 0 {
+		return obj
 	}
+
+	// Pass the new object and the given arguments to the
+	// constructor.  Ignore the constructor's return value(s).
+	constructorVal := reflect.ValueOf(constructor[0])
+	argList := make([]reflect.Value, len(constructor))
+	argList[0] = reflect.ValueOf(obj)
+	for i, argIface := range constructor[1:] {
+		argList[i+1] = reflect.ValueOf(argIface)
+	}
+	constructorVal.Call(argList)
+
+	// Return the object we just constructed.
 	return obj
 }
 
-// Return the list of parents.
-func (obj *Object) GetParents() []Object {
+// Specify the object's parent object(s).  For convenience, parents
+// can be specified either individually or as a slice.
+func (obj *Object) SetSuper(parentObjs ...interface{}) {
+	// Empty the current set of prototypes.
+	impl := obj.Implementation
+	impl.prototypes.Resize(0, len(parentObjs))
+
+	// Append each prototype object in turn.
+	for _, parentIface := range parentObjs {
+		parentVal := reflect.ValueOf(parentIface)
+		switch parentVal.Type().Kind() {
+		case reflect.Array, reflect.Slice:
+			// Append each object in turn to our prototype list.
+			for i := 0; i < parentVal.Len(); i++ {
+				impl.prototypes.Push(parentVal.Index(i).Interface().(Object))
+			}
+		default:
+			// Append the individual object to our prototype list.
+			impl.prototypes.Push(parentIface.(Object))
+		}
+	}
+}
+
+// Return the object's parent object(s) as a list.
+func (obj *Object) GetSuper() []Object {
 	impl := obj.Implementation
 	parentList := make([]Object, len(impl.prototypes))
 	for i, parent := range impl.prototypes {

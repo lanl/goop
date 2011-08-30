@@ -123,14 +123,33 @@ func TestIteration(t *testing.T) {
 	}
 }
 
+// Test constructors.
+func TestConstructors(t *testing.T) {
+	happyClass := func(self Object, someVal int) {
+		self.Set("val", someVal)
+	}
+	value := 524287
+	happyObj := New(happyClass, value)
+	if result := happyObj.Get("val"); result.(int) != value {
+		t.Fatalf("Expected %d but saw %v", value, result)
+	}
+}
+
 // Test single-parent inheritance.
-func TestSimpleInheritance(t *testing.T) {
-	// Test 1: Ensure that Get() finds members in our parent.
-	point2D := New()
-	point2D.Set("x", 2)
-	point2D.Set("y", 4)
-	point3D := New(point2D)
-	point3D.Set("z", 8)
+func TestSingleParentInheritance(t *testing.T) {
+	// Test 1: Ensure that Get() finds members in an object's parent.
+	point2D_class := func(self Object, x, y int) {
+		// Construct a 2-D point.
+		self.Set("x", x)
+		self.Set("y", y)
+	}
+	point3D_class := func(self Object, x, y, z int) {
+		// Construct a 3-D point.
+		super := New(point2D_class, x, y)
+		self.SetSuper(super)
+		self.Set("z", z)
+	}
+	point3D := New(point3D_class, 2, 4, 8)
 	expectedTotal := 2 + 4 + 8
 	total := point3D.Get("x").(int) + point3D.Get("y").(int) + point3D.Get("z").(int)
 	if total != expectedTotal {
@@ -138,7 +157,6 @@ func TestSimpleInheritance(t *testing.T) {
 	}
 
 	// Test 2: Ensure that Contents() finds members in our parent.
-	point2D.Set("x", point2D.Get("x").(int)+10)
 	total = 0
 	for key, value := range point3D.Contents(false) {
 		switch key {
@@ -148,13 +166,43 @@ func TestSimpleInheritance(t *testing.T) {
 			t.Fatalf("Did not expect key \"%s\", value %v", key, value)
 		}
 	}
-	if total != expectedTotal+10 {
+	if total != expectedTotal {
 		t.Fatalf("Expected %d from Contents() but saw %d", expectedTotal, total)
 	}
+}
 
-	// Test 3: Ensure that GetParents() returns the correct parent.
-	parentList := point3D.GetParents()
-	if len(parentList) != 1 || !parentList[0].IsEquiv(point2D) {
-		t.Fatalf("Expected parent:%v to be equivalent to point2D:%v", parentList[0], point2D)
+// Test dynamically changing an object's lineage.
+func TestSuperChange(t *testing.T) {
+	parentType1 := func(self Object) {
+		self.Set("one", 11111)
+	}
+	parentObj1 := New(parentType1)
+	parentType2 := func(self Object) {
+		self.Set("two", 22222)
+	}
+	parentObj2 := New(parentType2)
+	childType := func(self Object) {
+		self.SetSuper(parentObj1)
+		self.Set("me", 33333)
+	}
+	childObj := New(childType)
+	if result := childObj.Get("me").(int); result != 33333 {
+		t.Fatalf("Expected %d but saw %v", 33333, result)
+	}
+	if result := childObj.Get("one").(int); result != 11111 {
+		t.Fatalf("Expected %d but saw %v", 11111, result)
+	}
+	childObj.SetSuper(parentObj2)
+	if result := childObj.Get("me").(int); result != 33333 {
+		t.Fatalf("Expected %d but saw %v", 33333, result)
+	}
+	if result := childObj.Get("one"); result != NotFound {
+		t.Fatalf("Expected %#v but saw %v", NotFound, result)
+	}
+	if result := childObj.Get("two").(int); result != 22222 {
+		t.Fatalf("Expected %d but saw %v", 22222, result)
+	}
+	if result := childObj.GetSuper(); len(result) != 1 || !result[0].IsEquiv(parentObj2) {
+		t.Fatalf("Expected equivalence between %#v and the first element of %#v", parentObj2, result)
 	}
 }
