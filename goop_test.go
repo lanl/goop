@@ -151,4 +151,10 @@ func TestSimpleInheritance(t *testing.T) {
 	if total != expectedTotal+10 {
 		t.Fatalf("Expected %d from Contents() but saw %d", expectedTotal, total)
 	}
+
+	// Test 3: Ensure that GetParents() returns the correct parent.
+	parentList := point3D.GetParents()
+	if len(parentList) != 1 || !parentList[0].IsEquiv(point2D) {
+		t.Fatalf("Expected parent:%v to be equivalent to point2D:%v", parentList[0], point2D)
+	}
 }

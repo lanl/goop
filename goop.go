@@ -28,7 +28,8 @@ type Object struct {
 	Implementation *internal // Internal representation not exposed to the user
 }
 
-// Allocate and return a new object.
+// Allocate and return a new object, basing it off zero or more
+// prototype objects.
 func New(parentList ...Object) Object {
 	obj := Object{}
 	obj.Implementation = &internal{}
@@ -37,6 +38,21 @@ func New(parentList ...Object) Object {
 		obj.Implementation.prototypes.Push(parent)
 	}
 	return obj
+}
+
+// Return the list of parents.
+func (obj *Object) GetParents() []Object {
+	impl := obj.Implementation
+	parentList := make([]Object, len(impl.prototypes))
+	for i, parent := range impl.prototypes {
+		parentList[i] = parent.(Object)
+	}
+	return parentList
+}
+
+// Return whether another object is equivalent.
+func (obj *Object) IsEquiv(otherObj Object) bool {
+	return obj.Implementation == otherObj.Implementation
 }
 
 // Assign a value to the name of an object member.
