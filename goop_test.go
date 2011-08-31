@@ -206,3 +206,27 @@ func TestSuperChange(t *testing.T) {
 		t.Fatalf("Expected equivalence between %#v and the first element of %#v", parentObj2, result)
 	}
 }
+
+func TestDispatch(t *testing.T) {
+	// Create an object with an "add" method that does different
+	// things based on its arguments.
+	adderObj := New()
+	adderObj.Set("add", CombineFunctions(
+		func(self Object, x, y int) int { return 10*x + y },
+		func(self Object, x, y float64) float64 { return 100.0*x + y },
+		func(self Object, a int) int { return -a }))
+
+	// Test out the "add" method.
+	if result := adderObj.Call("add", 77); !result[1].(bool) || result[0].([]interface{})[0].(int) != -77 {
+		t.Fatalf("Expected 77 but received %#v", result)
+	}
+	if result := adderObj.Call("add", 2, 3); !result[1].(bool) || result[0].([]interface{})[0].(int) != 23 {
+		t.Fatalf("Expected 23 but received %#v", result)
+	}
+	if result := adderObj.Call("add", 5.4, 3.2); !result[1].(bool) || result[0].([]interface{})[0].(float64) != 543.2 {
+		t.Fatalf("Expected 543.2 but received %#v", result)
+	}
+	if result := adderObj.Call("add", 5.4); result[1].(bool) {
+		t.Fatalf("Expected false but received %#v", result)
+	}
+}

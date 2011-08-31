@@ -169,3 +169,68 @@ func (obj *Object) Call(methodName string, arguments ...interface{}) []interface
 	}
 	return returnIfaces
 }
+
+// Define a type that maps a textual type description to a function
+// that accepts the associated types.
+type typeDependentDispatch map[string]interface{}
+
+// Given a function, return a string that describes its arguments
+func functionSignature(funcIface interface{}) string {
+	funcType := reflect.ValueOf(funcIface).Type()
+	numArgs := funcType.NumIn()
+	argTypes := make([]byte, numArgs)
+	for i := 0; i < numArgs; i++ {
+		argTypes[i] = byte(funcType.In(i).Kind())
+	}
+	return string(argTypes)
+}
+
+// Given an array of arguments, return a string that describes them.
+func argumentSignature(argList []interface{}) string {
+	numArgs := len(argList)
+	argTypes := make([]byte, numArgs)
+	for i := 0; i < numArgs; i++ {
+		argTypes[i] = byte(reflect.TypeOf(argList[i]).Kind())
+	}
+	return string(argTypes)
+}
+
+// A MetaFunction encapsulates one or more functions, each with a
+// unique argument-type signature.  When callled, it accepts arbitrary
+// inputs and returns arbitrary outputs (as an array) plus a success
+// code indicating if any of constituent functions was called.
+type MetaFunction func(varArgs ...interface{}) (funcResult []interface{}, ok bool)
+
+// Combine multiple functions for type-dependent dispatch.
+func CombineFunctions(functions ...interface{}) MetaFunction {
+	dispatchMap := make(typeDependentDispatch, len(functions))
+	for _, funcIface := range functions {
+		dispatchMap[functionSignature(funcIface)] = funcIface
+	}
+	dispatcher := func(varArgs ...interface{}) (funcResult []interface{}, ok bool) {
+		// Find the function in the dispatch map.
+		var funcIface interface{}
+		funcIface, ok = dispatchMap[argumentSignature(varArgs)]
+		if !ok {
+			return []interface{}{argumentSignature(varArgs)}, false
+		}
+
+		// Invoke the function.
+		funcValue := reflect.ValueOf(funcIface)
+		funcArgs := make([]reflect.Value, len(varArgs))
+		for i, arg := range varArgs {
+			funcArgs[i] = reflect.ValueOf(arg)
+		}
+		resultValues := funcValue.Call(funcArgs)
+
+		// Convert the function's return values to a more
+		// user-friendly type.
+		funcResult = make([]interface{}, len(resultValues))
+		for i, result := range resultValues {
+			funcResult[i] = result.Interface()
+		}
+		ok = true
+		return
+	}
+	return dispatcher
+}
