@@ -217,16 +217,16 @@ func TestDispatch(t *testing.T) {
 		func(self Object, a int) int { return -a }))
 
 	// Test out the "add" method.
-	if result := adderObj.Call("add", 77); !result[1].(bool) || result[0].([]interface{})[0].(int) != -77 {
+	if result := adderObj.Call("add", 77); result[0].(int) != -77 {
 		t.Fatalf("Expected 77 but received %#v", result)
 	}
-	if result := adderObj.Call("add", 2, 3); !result[1].(bool) || result[0].([]interface{})[0].(int) != 23 {
+	if result := adderObj.Call("add", 2, 3); result[0].(int) != 23 {
 		t.Fatalf("Expected 23 but received %#v", result)
 	}
-	if result := adderObj.Call("add", 5.4, 3.2); !result[1].(bool) || result[0].([]interface{})[0].(float64) != 543.2 {
+	if result := adderObj.Call("add", 5.4, 3.2); result[0].(float64) != 543.2 {
 		t.Fatalf("Expected 543.2 but received %#v", result)
 	}
-	if result := adderObj.Call("add", 5.4); result[1].(bool) {
-		t.Fatalf("Expected false but received %#v", result)
+	if result := adderObj.Call("add", 5.4); result[0] != NotFound {
+		t.Fatalf("Expected NotFound but received %#v", result)
 	}
 }

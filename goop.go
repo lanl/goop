@@ -150,26 +150,6 @@ func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
 	return resultMap
 }
 
-// Invoke a method on an object and return the method's return values as a slice.
-func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
-	// Construct a function and its arguments.
-	userFuncIface := obj.Implementation.symbolTable[methodName]
-	userFunc := reflect.ValueOf(userFuncIface)
-	userFuncArgs := make([]reflect.Value, len(arguments)+1)
-	userFuncArgs[0] = reflect.ValueOf(*obj)
-	for i, argIface := range arguments {
-		userFuncArgs[i+1] = reflect.ValueOf(argIface)
-	}
-
-	// Call the function and return the results.
-	returnVals := userFunc.Call(userFuncArgs)
-	returnIfaces := make([]interface{}, len(returnVals))
-	for i, val := range returnVals {
-		returnIfaces[i] = val.Interface()
-	}
-	return returnIfaces
-}
-
 // Define a type that maps a textual type description to a function
 // that accepts the associated types.
 type typeDependentDispatch map[string]interface{}
@@ -197,9 +177,10 @@ func argumentSignature(argList []interface{}) string {
 
 // A MetaFunction encapsulates one or more functions, each with a
 // unique argument-type signature.  When callled, it accepts arbitrary
-// inputs and returns arbitrary outputs (as an array) plus a success
-// code indicating if any of constituent functions was called.
-type MetaFunction func(varArgs ...interface{}) (funcResult []interface{}, ok bool)
+// inputs and returns arbitrary outputs (as an array).  On failure to
+// find a matching signature, a singleton array containing NotFound is
+// returned.
+type MetaFunction func(varArgs ...interface{}) (funcResult []interface{})
 
 // Combine multiple functions for type-dependent dispatch.
 func CombineFunctions(functions ...interface{}) MetaFunction {
@@ -207,12 +188,11 @@ func CombineFunctions(functions ...interface{}) MetaFunction {
 	for _, funcIface := range functions {
 		dispatchMap[functionSignature(funcIface)] = funcIface
 	}
-	dispatcher := func(varArgs ...interface{}) (funcResult []interface{}, ok bool) {
+	dispatcher := func(varArgs ...interface{}) (funcResult []interface{}) {
 		// Find the function in the dispatch map.
-		var funcIface interface{}
-		funcIface, ok = dispatchMap[argumentSignature(varArgs)]
+		funcIface, ok := dispatchMap[argumentSignature(varArgs)]
 		if !ok {
-			return []interface{}{argumentSignature(varArgs)}, false
+			return []interface{}{NotFound}
 		}
 
 		// Invoke the function.
@@ -229,8 +209,39 @@ func CombineFunctions(functions ...interface{}) MetaFunction {
 		for i, result := range resultValues {
 			funcResult[i] = result.Interface()
 		}
-		ok = true
 		return
 	}
 	return dispatcher
+}
+
+// Invoke a method on an object and return the method's return values
+// as a slice.  Return a slice of the singleton NotFound if the method
+// could not be found.
+func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
+	// Construct a function and its arguments.
+	userFuncIface := obj.Get(methodName)
+	if userFuncIface == NotFound {
+		return []interface{}{NotFound}
+	}
+	userFunc := reflect.ValueOf(userFuncIface)
+	userFuncArgs := make([]reflect.Value, len(arguments)+1)
+	userFuncArgs[0] = reflect.ValueOf(*obj)
+	for i, argIface := range arguments {
+		userFuncArgs[i+1] = reflect.ValueOf(argIface)
+	}
+
+	// Call the function.
+	returnVals := userFunc.Call(userFuncArgs)
+	returnIfaces := make([]interface{}, len(returnVals))
+	for i, val := range returnVals {
+		returnIfaces[i] = val.Interface()
+	}
+
+	// Return the results.  As a special case, we return a
+	// MetaFunction's already-wrapped results without an
+	// additional level of wrapping.
+	if _, ok := userFuncIface.(MetaFunction); ok {
+		returnIfaces = returnIfaces[0].([]interface{})
+	}
+	return returnIfaces
 }
