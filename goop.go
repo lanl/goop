@@ -156,12 +156,11 @@ invocation to a function that returns a constant value.
 package goop
 
 import "reflect"
-import "container/vector"
 
 // An object is represented internally as a struct.
 type internal struct {
 	symbolTable map[string]interface{} // Map from a member name to a member value
-	prototypes  vector.Vector          // List of other objects to search for members
+	prototypes  []Object               // List of other objects to search for members
 }
 
 // An Error is used for producing return values that are differently
@@ -212,7 +211,7 @@ func New(constructor ...interface{}) Object {
 func (obj *Object) SetSuper(parentObjs ...interface{}) {
 	// Empty the current set of prototypes.
 	impl := obj.Implementation
-	impl.prototypes.Resize(0, len(parentObjs))
+	impl.prototypes = make([]Object, 0, len(parentObjs))
 
 	// Append each prototype object in turn.
 	for _, parentIface := range parentObjs {
@@ -221,23 +220,24 @@ func (obj *Object) SetSuper(parentObjs ...interface{}) {
 		case reflect.Array, reflect.Slice:
 			// Append each object in turn to our prototype list.
 			for i := 0; i < parentVal.Len(); i++ {
-				impl.prototypes.Push(parentVal.Index(i).Interface().(Object))
+				impl.prototypes = append(impl.prototypes, parentVal.Index(i).Interface().(Object))
 			}
 		default:
 			// Append the individual object to our prototype list.
-			impl.prototypes.Push(parentIface.(Object))
+			impl.prototypes = append(impl.prototypes, parentIface.(Object))
 		}
 	}
 }
 
 // Super returns the object's parent object(s) as a list.
 func (obj *Object) Super() []Object {
-	impl := obj.Implementation
-	parentList := make([]Object, len(impl.prototypes))
-	for i, parent := range impl.prototypes {
-		parentList[i] = parent.(Object)
-	}
-	return parentList
+	// Return a copy of impl.prototypes so if the caller mucks
+	// with it, it won't mess up our object's internal
+	// representation.
+	protos := obj.Implementation.prototypes
+	protoCopy := make([]Object, len(protos))
+	copy(protoCopy, protos)
+	return protoCopy
 }
 
 // IsEquiv returns whether another object is equivalent to the object
@@ -263,8 +263,7 @@ func (obj *Object) Get(memberName string) (value interface{}) {
 	// parents in turn.
 	value = NotFound
 	for _, parent := range obj.Implementation.prototypes {
-		parentObj := parent.(Object)
-		parentValue := parentObj.Get(memberName)
+		parentValue := parent.Get(memberName)
 		if parentValue != NotFound {
 			value = parentValue
 			return
@@ -287,8 +286,8 @@ func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
 	// members are correctly overridden.
 	impl := obj.Implementation
 	resultMap := make(map[string]interface{}, len(impl.symbolTable))
-	for i := impl.prototypes.Len() - 1; i >= 0; i-- {
-		parentObj := impl.prototypes.At(i).(Object)
+	for i := len(impl.prototypes) - 1; i >= 0; i-- {
+		parentObj := impl.prototypes[i]
 		for key, val := range parentObj.Contents(alsoMethods) {
 			resultMap[key] = val
 		}
