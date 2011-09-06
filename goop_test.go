@@ -202,7 +202,7 @@ func TestSuperChange(t *testing.T) {
 	if result := childObj.Get("two").(int); result != 22222 {
 		t.Fatalf("Expected %d but saw %v", 22222, result)
 	}
-	if result := childObj.GetSuper(); len(result) != 1 || !result[0].IsEquiv(parentObj2) {
+	if result := childObj.Super(); len(result) != 1 || !result[0].IsEquiv(parentObj2) {
 		t.Fatalf("Expected equivalence between %#v and the first element of %#v", parentObj2, result)
 	}
 }

@@ -2,8 +2,156 @@
 // Use of this source code is governed by a BSD-style license.
 
 /*
-This package provides support for dynamic object-oriented programming
-constructs in Go, much like those that appear in JavaScript.
+
+The Goop (Go Object-Oriented Programming) package provides support for
+dynamic object-oriented programming constructs in Go, much like those
+that appear in various scripting languages.  The goal is to integrate
+fast, native-Go objects and slower but more flexible goop objects
+within the same program.
+
+FEATURES: For flexibility, Goop uses a prototype-based object model
+(cf. http://en.wikipedia.org/wiki/Prototype-based_programming) rather
+than a class-based object model.  Objects can be created either by
+inheriting from existing objects or from scratch.  Data fields and
+method functions can be added and removed at will.  Multiple
+inheritance is supported.  An object's inheritance hierarchy can be
+altered dynamically.  Methods can utilize type-dependent dispatch
+(i.e., multiple methods with the same name but different argument
+types).
+
+As an example, let's create an object from scratch:
+
+ pointObj := goop.New()
+
+Now let's add a couple of data fields to pointObj:
+
+ pointObj.Set("x", 0)
+ pointObj.Set("y", 0)
+
+Unlike native Go, Goop lets you define multiple method functions with
+the same name, as long as the arguments differ in type and/or number:
+
+ pointObj.Set("moveBy", goop.CombineFunctions(
+         func(this goop.Object, xDelta, yDelta int) {
+                 this.Set("x", this.Get("x") + xDelta)
+                 this.Set("y", this.Get("y") + yDelta)
+         },
+         func(this goop.Object, delta int) {
+                 this.Set("x", this.Get("x") + delta)
+                 this.Set("y", this.Get("y") + delta)
+         }))
+
+Admittedly, having to use Get and Set all the time can be a bit
+tedious.  Functions that are less trivial than the above will
+typically call Get and Set only at the beginning and end of the
+function and use local variables for most of the computation.
+
+Use Call to call a method on an object:
+
+ pointObj.Call("moveBy", 3, 5)
+ pointObj.Call("moveBy", 12)
+
+Call returns all of the method's return values as a single slice.  Use
+type assertions to put the individual return values into their correct
+format:
+
+ pointObj.Set("distance", func(this goop.Object) float64 {
+         x := float64(this.Get("x"))
+         y := float64(this.Get("y"))
+         return math.Sqrt(x*x + y*y)
+ })
+
+ d := pointObj.Call("distance")[0].(float64)
+
+Again, sorry for the bloat, but that's what it takes to provide this
+sort of dynamic behavior in a language like Go.
+
+The following more extended example shows how to define and
+instantiate an LCMCalculator object, which is constructed from two
+integers and provides methods that return the greatest common divisor
+and least common multiple of those two numbers.  Each of those methods
+memoizes its return value by redefining itself after its first
+invocation to a function that returns a constant value.
+
+ // This file showcases the goop package by reimplementing the
+ // JavaScript LCM example from
+ // http://en.wikipedia.org/wiki/Javascript#More_advanced_example.
+
+ package main
+
+ import "goop"
+ import "fmt"
+ import "sort"
+
+ // Finds the lowest common multiple of two numbers
+ func LCMCalculator(this goop.Object, x, y int) { // constructor function
+	 this.Set("a", x)
+	 this.Set("b", y)
+	 this.Set("gcd", func(this goop.Object) int { // method that calculates the greatest common divisor
+		 abs := func(x int) int {
+			 if x < 0 {
+				 x = -x
+			 }
+			 return x
+		 }
+		 a := abs(this.Get("a").(int))
+		 b := abs(this.Get("b").(int))
+		 if a < b {
+			 // swap variables
+			 a, b = b, a
+		 }
+		 for b != 0 {
+			 t := b
+			 b = a % b
+			 a = t
+		 }
+		 // Only need to calculate GCD once, so "redefine" this
+		 // method.  (Actually not redefinition - it's defined
+		 // on the instance itself, so that this.gcd refers to
+		 // this "redefinition".)
+		 this.Set("gcd", func(this goop.Object) int { return a })
+		 return a
+	 })
+	 this.Set("lcm", func(this goop.Object) int {
+		 lcm := this.Get("a").(int) / this.Call("gcd")[0].(int) * this.Get("b").(int)
+		 // Only need to calculate lcm once, so "redefine" this method.
+		 this.Set("lcm", func(this goop.Object) int { return lcm })
+		 return lcm
+	 })
+	 this.Set("toString", func(this goop.Object) string {
+		 return fmt.Sprintf("LCMCalculator: a = %d, b = %d",
+			 this.Get("a").(int), this.Get("b").(int))
+	 })
+ }
+
+ type lcmObjectVector []goop.Object
+
+ func (lov lcmObjectVector) Less(i, j int) bool {
+	 a := lov[i].Call("lcm")[0].(int)
+	 b := lov[j].Call("lcm")[0].(int)
+	 return a < b
+ }
+
+ func (lov lcmObjectVector) Len() int {
+	 return len(lov)
+ }
+
+ func (lov lcmObjectVector) Swap(i, j int) {
+	 lov[i], lov[j] = lov[j], lov[i]
+ }
+
+ func main() {
+	 var lcmObjs lcmObjectVector
+	 for _, d := range [][]int{{25, 55}, {21, 56}, {22, 58}, {28, 56}} {
+		 lcmObjs = append(lcmObjs, goop.New(LCMCalculator, d[0], d[1]))
+	 }
+	 sort.Sort(lcmObjs)
+	 for _, lcm := range lcmObjs {
+		 fmt.Printf("%s, gcd = %d, lcm = %d\n",
+			 lcm.Call("toString")[0], lcm.Call("gcd")[0], lcm.Call("lcm")[0])
+	 }
+ }
+
 */
 package goop
 
@@ -16,20 +164,21 @@ type internal struct {
 	prototypes  vector.Vector          // List of other objects to search for members
 }
 
-// A goop.Error is used for producing return values that are
-// differently typed from all user types.
+// An Error is used for producing return values that are differently
+// typed from all user types.
 type Error string
 
-// A Get() call that fails to find the specified member returns goop.NotFound.
+// A failed attempt to locate an object member returns NotFound.
 const NotFound = Error("Member not found")
 
-// A goop.Object is a lot like a JavaScript object.
+// A goop Object is a lot like a JavaScript object in that it uses
+// prototype-based inheritance instead of a class hierarchy.
 type Object struct {
 	Implementation *internal // Internal representation not exposed to the user
 }
 
-// Allocate and return a new object, optionally given a constructor
-// function and constructor arguments.
+// New allocates and return a new object.  It takes as arguments an
+// optional constructor function with optional arguments.
 func New(constructor ...interface{}) Object {
 	// Allocate and initialize a new object.
 	obj := Object{}
@@ -56,8 +205,10 @@ func New(constructor ...interface{}) Object {
 	return obj
 }
 
-// Specify the object's parent object(s).  For convenience, parents
-// can be specified either individually or as a slice.
+// SetSuper specifies the object's parent object(s).  This is the
+// mechanism by which both single and multiple inheritance are
+// implemented.  For convenience, parents can be specified either
+// individually or as a slice.
 func (obj *Object) SetSuper(parentObjs ...interface{}) {
 	// Empty the current set of prototypes.
 	impl := obj.Implementation
@@ -79,8 +230,8 @@ func (obj *Object) SetSuper(parentObjs ...interface{}) {
 	}
 }
 
-// Return the object's parent object(s) as a list.
-func (obj *Object) GetSuper() []Object {
+// Super returns the object's parent object(s) as a list.
+func (obj *Object) Super() []Object {
 	impl := obj.Implementation
 	parentList := make([]Object, len(impl.prototypes))
 	for i, parent := range impl.prototypes {
@@ -89,17 +240,18 @@ func (obj *Object) GetSuper() []Object {
 	return parentList
 }
 
-// Return whether another object is equivalent.
+// IsEquiv returns whether another object is equivalent to the object
+// in question.
 func (obj *Object) IsEquiv(otherObj Object) bool {
 	return obj.Implementation == otherObj.Implementation
 }
 
-// Assign a value to the name of an object member.
+// Set associates an arbitrary value with the name of an object member.
 func (obj *Object) Set(memberName string, value interface{}) {
 	obj.Implementation.symbolTable[memberName] = value
 }
 
-// Return the value associated with the name of an object member.
+// Get returns the value associated with the name of an object member.
 func (obj *Object) Get(memberName string) (value interface{}) {
 	// Search our local members.
 	var ok bool
@@ -121,14 +273,15 @@ func (obj *Object) Get(memberName string) (value interface{}) {
 	return
 }
 
-// Remove a member from an object.  This function always succeeds,
-// even if the member did not previously exist.
+// Unset removes a member from an object.  This function always
+// succeeds, even if the member did not previously exist.
 func (obj *Object) Unset(memberName string) {
 	obj.Implementation.symbolTable[memberName] = 0, false
 }
 
-// Return a map of all members of an object (useful for iteration).
-// If the argument is true, also include method functions.
+// Contents returns a map of all members of an object (useful for
+// iteration).  If the argument is true, Contents also includes method
+// functions.
 func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
 	// Copy our parents' data in reverse order so ancestor's
 	// members are correctly overridden.
@@ -150,11 +303,12 @@ func (obj *Object) Contents(alsoMethods bool) map[string]interface{} {
 	return resultMap
 }
 
-// Define a type that maps a textual type description to a function
-// that accepts the associated types.
+// A typeDependentDispatch maps a textual type description to a
+// function that accepts the associated types.
 type typeDependentDispatch map[string]interface{}
 
-// Given a function, return a string that describes its arguments
+// Given a function, functionSignature returns a string that describes
+// its arguments.
 func functionSignature(funcIface interface{}) string {
 	funcType := reflect.ValueOf(funcIface).Type()
 	numArgs := funcType.NumIn()
@@ -165,7 +319,8 @@ func functionSignature(funcIface interface{}) string {
 	return string(argTypes)
 }
 
-// Given an array of arguments, return a string that describes them.
+// Given an array of arguments, argumentSignature returns a string
+// that describes them.
 func argumentSignature(argList []interface{}) string {
 	numArgs := len(argList)
 	argTypes := make([]byte, numArgs)
@@ -176,13 +331,14 @@ func argumentSignature(argList []interface{}) string {
 }
 
 // A MetaFunction encapsulates one or more functions, each with a
-// unique argument-type signature.  When callled, it accepts arbitrary
-// inputs and returns arbitrary outputs (as an array).  On failure to
-// find a matching signature, a singleton array containing NotFound is
-// returned.
+// unique argument-type signature.  When a MetaFunction is invoked, it
+// accepts arbitrary inputs and returns arbitrary outputs (bundled
+// into a slice).  On failure to find a matching signature, a
+// singleton slice containing NotFound is returned.
 type MetaFunction func(varArgs ...interface{}) (funcResult []interface{})
 
-// Combine multiple functions for type-dependent dispatch.
+// CombineFunctions combines multiple functions into a single
+// MetaFunction for type-dependent dispatch.
 func CombineFunctions(functions ...interface{}) MetaFunction {
 	dispatchMap := make(typeDependentDispatch, len(functions))
 	for _, funcIface := range functions {
@@ -214,9 +370,9 @@ func CombineFunctions(functions ...interface{}) MetaFunction {
 	return dispatcher
 }
 
-// Invoke a method on an object and return the method's return values
-// as a slice.  Return a slice of the singleton NotFound if the method
-// could not be found.
+// Call invokes a method on an object and returns the method's return
+// values as a slice.  Call returns a slice of the singleton NotFound
+// if the method could not be found.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments.
 	userFuncIface := obj.Get(methodName)
