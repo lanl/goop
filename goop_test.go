@@ -207,6 +207,8 @@ func TestSuperChange(t *testing.T) {
 	}
 }
 
+// Test the use of type-dependent dispatch (multiple methods with the
+// same name but different types).
 func TestDispatch(t *testing.T) {
 	// Create an object with an "add" method that does different
 	// things based on its arguments.
@@ -229,4 +231,31 @@ func TestDispatch(t *testing.T) {
 	if result := adderObj.Call("add", 5.4); result[0] != NotFound {
 		t.Fatalf("Expected NotFound but received %#v", result)
 	}
+}
+
+// Compute n! with a recursive (and not tail-recursive) call.
+func recursiveFactorial(n uint64) uint64 {
+	if n == 1 {
+		return 1
+	}
+	return n * recursiveFactorial(n-1)
+}
+
+// Measure the speed of a native-Go factorial function.
+func BenchmarkNativeFact(b *testing.B) {
+	recursiveFactorial(uint64(b.N))
+}
+
+// Measure the speed of a goop factorial method.
+func BenchmarkGoopFact(b *testing.B) {
+	b.StopTimer()
+	factObj := New()
+	factObj.Set("fact", func(this Object, n uint64) uint64 {
+		if n == 1 {
+			return 1
+		}
+		return n * this.Call("fact", n-1)[0].(uint64)
+	})
+	b.StartTimer()
+	factObj.Call("fact", uint64(b.N))
 }
