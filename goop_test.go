@@ -307,30 +307,3 @@ func BenchmarkEvenMoreGoopFNV1(b *testing.B) {
 		fnv1Obj.Call("fnv1")
 	}
 }
-
-// Compute n! with a recursive (and not tail-recursive) call.
-func recursiveFactorial(n uint64) uint64 {
-	if n == 1 {
-		return 1
-	}
-	return n * recursiveFactorial(n-1)
-}
-
-// Measure the speed of the above.
-func BenchmarkNativeFact(b *testing.B) {
-	recursiveFactorial(uint64(b.N))
-}
-
-// Measure the speed of a goop factorial method.
-func BenchmarkGoopFact(b *testing.B) {
-	b.StopTimer()
-	factObj := New()
-	factObj.Set("fact", func(this Object, n uint64) uint64 {
-		if n == 1 {
-			return 1
-		}
-		return n * this.Call("fact", n-1)[0].(uint64)
-	})
-	b.StartTimer()
-	factObj.Call("fact", uint64(b.N))
-}
