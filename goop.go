@@ -159,10 +159,10 @@ goop_test.go:
  gotest -test.bench=".*"
 
 On my computer, a function that performs a Get a Set, and a Call runs
-about 300x slower than a native Go function that directly accesses
+about 200x as slow as a native Go function that directly accesses
 variables and calls other functions.  Toss in another level of
 indirection with CombineFunctions (Goop's mechanism for type-dependent
-dispatch) and the performance degrades to almost 850x native.  In
+dispatch) and the performance degrades to almost 680x native.  In
 short, you'll want to do most of your coding in native Go and use Goop
 only when your application requires the extra flexibility that Goop
 provides.  Then, you should cache as many object members as possible
@@ -389,7 +389,8 @@ func CombineFunctions(functions ...interface{}) MetaFunction {
 // values as a slice.  Call returns a slice of the singleton NotFound
 // if the method could not be found.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
-	// Construct a function and its arguments.
+	// Construct a function and its arguments, using Get to
+	// automatically search parent objects if necessary.
 	userFuncIface := obj.Get(methodName)
 	if userFuncIface == NotFound {
 		return []interface{}{NotFound}
