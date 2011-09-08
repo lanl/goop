@@ -152,6 +152,22 @@ invocation to a function that returns a constant value.
 	 }
  }
 
+PERFORMANCE: Terrible.  To determine just how bad the performance is
+on your computer, you can run the benchmark tests included in
+goop_test.go:
+
+ gotest -test.bench=".*"
+
+On my computer, a function that performs a Get a Set, and a Call runs
+about 300x slower than a native Go function that directly accesses
+variables and calls other functions.  Toss in another level of
+indirection with CombineFunctions (Goop's mechanism for type-dependent
+dispatch) and the performance degrades to almost 850x native.  In
+short, you'll want to do most of your coding in native Go and use Goop
+only when your application requires the extra flexibility that Goop
+provides.  Then, you should cache as many object members as possible
+in Go variables to reduce the number of Get and Set calls.
+
 */
 package goop
 

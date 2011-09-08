@@ -6,6 +6,7 @@
 package goop
 
 import "testing"
+import "fmt"
 
 // Test setting and retrieving a scalar value.
 func TestSimpleValues(t *testing.T) {
@@ -233,6 +234,80 @@ func TestDispatch(t *testing.T) {
 	}
 }
 
+// Measure the speed of modifying a variable using native code.
+func BenchmarkNativeFNV1(b *testing.B) {
+	b.StopTimer()
+	var hashVal uint64 = 14695981039346656037
+	fnv1 := func() {
+		hashVal *= 1099511628211
+		hashVal ^= 0xff
+	}
+	b.StartTimer()
+	for i := b.N; i > 0; i-- {
+		fnv1()
+	}
+	b.StopTimer()
+	if hashVal == 0 {
+		// This case is pretty unlikely to occur.  We mainly
+		// want to prevent hashVal from being optimized away.
+		fmt.Printf("Cool!  We found a 64-bit zero hash of length %d.\n", b.N)
+	}
+}
+
+// Measure the speed of modifying a variable using Goop's Get and Set methods.
+func BenchmarkGoopFNV1(b *testing.B) {
+	b.StopTimer()
+	fnv1Obj := New()
+	fnv1Obj.Set("hashVal", uint64(14695981039346656037))
+	fnv1 := func() {
+		hashVal := fnv1Obj.Get("hashVal").(uint64)
+		hashVal *= 1099511628211
+		hashVal ^= 0xff
+		fnv1Obj.Set("hashVal", hashVal)
+	}
+	b.StartTimer()
+	for i := b.N; i > 0; i-- {
+		fnv1()
+	}
+}
+
+// Measure the speed of modifying a variable using Goop's Get, Set,
+// and Call methods.
+func BenchmarkMoreGoopFNV1(b *testing.B) {
+	b.StopTimer()
+	fnv1Obj := New()
+	fnv1Obj.Set("hashVal", uint64(14695981039346656037))
+	fnv1Obj.Set("fnv1", func(this Object) {
+		hashVal := this.Get("hashVal").(uint64)
+		hashVal *= 1099511628211
+		hashVal ^= 0xff
+		this.Set("hashVal", hashVal)
+	})
+	b.StartTimer()
+	for i := b.N; i > 0; i-- {
+		fnv1Obj.Call("fnv1")
+	}
+}
+
+// Measure the speed of modifying a variable using Goop's Get, Set,
+// Call, and CombineFunctions methods.
+func BenchmarkEvenMoreGoopFNV1(b *testing.B) {
+	b.StopTimer()
+	fnv1Obj := New()
+	fnv1Obj.Set("hashVal", uint64(14695981039346656037))
+	fnv1Obj.Set("fnv1", CombineFunctions(
+		func(this Object) {
+			hashVal := this.Get("hashVal").(uint64)
+			hashVal *= 1099511628211
+			hashVal ^= 0xff
+			this.Set("hashVal", hashVal)
+		}))
+	b.StartTimer()
+	for i := b.N; i > 0; i-- {
+		fnv1Obj.Call("fnv1")
+	}
+}
+
 // Compute n! with a recursive (and not tail-recursive) call.
 func recursiveFactorial(n uint64) uint64 {
 	if n == 1 {
@@ -241,7 +316,7 @@ func recursiveFactorial(n uint64) uint64 {
 	return n * recursiveFactorial(n-1)
 }
 
-// Measure the speed of a native-Go factorial function.
+// Measure the speed of the above.
 func BenchmarkNativeFact(b *testing.B) {
 	recursiveFactorial(uint64(b.N))
 }
