@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license.
 
 /*
-
 The Goop (Go Object-Oriented Programming) package provides support for
 dynamic object-oriented programming constructs in Go, much like those
 that appear in various scripting languages.  The goal is to integrate
@@ -12,12 +11,12 @@ within the same program.
 FEATURES: For flexibility, Goop uses a prototype-based object model
 (cf. http://en.wikipedia.org/wiki/Prototype-based_programming) rather
 than a class-based object model.  Objects can be created either by
-inheriting from existing objects or from scratch.  Data fields and
-method functions can be added and removed at will.  Multiple
-inheritance is supported.  An object's inheritance hierarchy can be
-altered dynamically.  Methods can utilize type-dependent dispatch
-(i.e., multiple methods with the same name but different argument
-types).
+inheriting from existing objects or from scratch.  Data fields
+(a.k.a. properties) and method functions can be added and removed at
+will.  Multiple inheritance is supported.  An object's inheritance
+hierarchy can be altered dynamically.  Methods can utilize
+type-dependent dispatch (i.e., multiple methods with the same name but
+different argument types).
 
 As an example, let's create an object from scratch:
 
@@ -64,7 +63,7 @@ format:
  d := pointObj.Call("distance")[0].(float64)
 
 Again, sorry for the bloat, but that's what it takes to provide this
-sort of dynamic behavior in a language like Go.
+sort of dynamic behavior in Go.
 
 The following more extended example shows how to define and
 instantiate an LCMCalculator object, which is constructed from two
@@ -73,8 +72,7 @@ and least common multiple of those two numbers.  Each of those methods
 memoizes its return value by redefining itself after its first
 invocation to a function that returns a constant value.
 
- // This file showcases the goop package by reimplementing the
- // JavaScript LCM example from
+ // This file showcases the Goop package by reimplementing the JavaScript LCM example from
  // http://en.wikipedia.org/wiki/Javascript#More_advanced_example.
 
  package main
@@ -151,23 +149,6 @@ invocation to a function that returns a constant value.
 			 lcm.Call("toString")[0], lcm.Call("gcd")[0], lcm.Call("lcm")[0])
 	 }
  }
-
-PERFORMANCE: Terrible.  To determine just how bad the performance is
-on your computer, you can run the benchmark tests included in
-goop_test.go:
-
- gotest -test.bench=".*"
-
-On my computer, a function that performs a Get a Set, and a Call runs
-about 200x as slow as a native Go function that directly accesses
-variables and calls other functions.  Toss in another level of
-indirection with CombineFunctions (Goop's mechanism for type-dependent
-dispatch) and the performance degrades to almost 680x native.  In
-short, you'll want to do most of your coding in native Go and use Goop
-only when your application requires the extra flexibility that Goop
-provides.  Then, you should cache as many object members as possible
-in Go variables to reduce the number of Get and Set calls.
-
 */
 package goop
 
