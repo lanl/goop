@@ -5,7 +5,7 @@
 The Goop (Go Object-Oriented Programming) package provides support for
 dynamic object-oriented programming constructs in Go, much like those
 that appear in various scripting languages.  The goal is to integrate
-fast, native-Go objects and slower but more flexible goop objects
+fast, native-Go objects and slower but more flexible Goop objects
 within the same program.
 
 FEATURES: For flexibility, Goop uses a prototype-based object model
@@ -77,77 +77,77 @@ invocation to a function that returns a constant value.
 
  package main
 
- import "goop"
+ import "github.com/losalamos/goop"
  import "fmt"
  import "sort"
 
  // Finds the lowest common multiple of two numbers
  func LCMCalculator(this goop.Object, x, y int) { // constructor function
-	 this.Set("a", x)
-	 this.Set("b", y)
-	 this.Set("gcd", func(this goop.Object) int { // method that calculates the greatest common divisor
-		 abs := func(x int) int {
-			 if x < 0 {
-				 x = -x
-			 }
-			 return x
-		 }
-		 a := abs(this.Get("a").(int))
-		 b := abs(this.Get("b").(int))
-		 if a < b {
-			 // swap variables
-			 a, b = b, a
-		 }
-		 for b != 0 {
-			 t := b
-			 b = a % b
-			 a = t
-		 }
-		 // Only need to calculate GCD once, so "redefine" this
-		 // method.  (Actually not redefinition - it's defined
-		 // on the instance itself, so that this.gcd refers to
-		 // this "redefinition".)
-		 this.Set("gcd", func(this goop.Object) int { return a })
-		 return a
-	 })
-	 this.Set("lcm", func(this goop.Object) int {
-		 lcm := this.Get("a").(int) / this.Call("gcd")[0].(int) * this.Get("b").(int)
-		 // Only need to calculate lcm once, so "redefine" this method.
-		 this.Set("lcm", func(this goop.Object) int { return lcm })
-		 return lcm
-	 })
-	 this.Set("toString", func(this goop.Object) string {
-		 return fmt.Sprintf("LCMCalculator: a = %d, b = %d",
-			 this.Get("a").(int), this.Get("b").(int))
-	 })
+         this.Set("a", x)
+         this.Set("b", y)
+         this.Set("gcd", func(this goop.Object) int { // method that calculates the greatest common divisor
+                 abs := func(x int) int {
+                         if x < 0 {
+                                 x = -x
+                         }
+                         return x
+                 }
+                 a := abs(this.Get("a").(int))
+                 b := abs(this.Get("b").(int))
+                 if a < b {
+                         // swap variables
+                         a, b = b, a
+                 }
+                 for b != 0 {
+                         t := b
+                         b = a % b
+                         a = t
+                 }
+                 // Only need to calculate GCD once, so "redefine" this
+                 // method.  (Actually not redefinition - it's defined
+                 // on the instance itself, so that this.gcd refers to
+                 // this "redefinition".)
+                 this.Set("gcd", func(this goop.Object) int { return a })
+                 return a
+         })
+         this.Set("lcm", func(this goop.Object) int {
+                 lcm := this.Get("a").(int) / this.Call("gcd")[0].(int) * this.Get("b").(int)
+                 // Only need to calculate lcm once, so "redefine" this method.
+                 this.Set("lcm", func(this goop.Object) int { return lcm })
+                 return lcm
+         })
+         this.Set("toString", func(this goop.Object) string {
+                 return fmt.Sprintf("LCMCalculator: a = %d, b = %d",
+                         this.Get("a").(int), this.Get("b").(int))
+         })
  }
 
  type lcmObjectVector []goop.Object
 
  func (lov lcmObjectVector) Less(i, j int) bool {
-	 a := lov[i].Call("lcm")[0].(int)
-	 b := lov[j].Call("lcm")[0].(int)
-	 return a < b
+         a := lov[i].Call("lcm")[0].(int)
+         b := lov[j].Call("lcm")[0].(int)
+         return a < b
  }
 
  func (lov lcmObjectVector) Len() int {
-	 return len(lov)
+         return len(lov)
  }
 
  func (lov lcmObjectVector) Swap(i, j int) {
-	 lov[i], lov[j] = lov[j], lov[i]
+         lov[i], lov[j] = lov[j], lov[i]
  }
 
  func main() {
-	 var lcmObjs lcmObjectVector
-	 for _, d := range [][]int{{25, 55}, {21, 56}, {22, 58}, {28, 56}} {
-		 lcmObjs = append(lcmObjs, goop.New(LCMCalculator, d[0], d[1]))
-	 }
-	 sort.Sort(lcmObjs)
-	 for _, lcm := range lcmObjs {
-		 fmt.Printf("%s, gcd = %d, lcm = %d\n",
-			 lcm.Call("toString")[0], lcm.Call("gcd")[0], lcm.Call("lcm")[0])
-	 }
+         var lcmObjs lcmObjectVector
+         for _, d := range [][]int{{25, 55}, {21, 56}, {22, 58}, {28, 56}} {
+                 lcmObjs = append(lcmObjs, goop.New(LCMCalculator, d[0], d[1]))
+         }
+         sort.Sort(lcmObjs)
+         for _, lcm := range lcmObjs {
+                 fmt.Printf("%s, gcd = %d, lcm = %d\n",
+                         lcm.Call("toString")[0], lcm.Call("gcd")[0], lcm.Call("lcm")[0])
+         }
  }
 */
 package goop
