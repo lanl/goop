@@ -234,8 +234,25 @@ func TestDispatch(t *testing.T) {
 	}
 }
 
+// The following is used by native_fnv1.  We hope that making it
+// exportable will prevent the compiler from optimizing it away.
+var Native_HashVal uint64 = 14695981039346656037
+
+// Apply the FNV-1 hash to a single 0xFF octet.
+func native_fnv1() {
+	Native_HashVal *= 1099511628211
+	Native_HashVal ^= 0xff
+}
+
 // Measure the speed of modifying a variable using native code.
 func BenchmarkNativeFNV1(b *testing.B) {
+	for i := b.N; i > 0; i-- {
+		native_fnv1()
+	}
+}
+
+// Measure the speed of modifying a variable using native code.
+func BenchmarkNativeFNV1Closure(b *testing.B) {
 	b.StopTimer()
 	var hashVal uint64 = 14695981039346656037
 	fnv1 := func() {
