@@ -7,7 +7,7 @@ Description
 The Goop (Go Object-Oriented Programming) package provides support for
 dynamic object-oriented programming constructs in Go, much like those
 that appear in various scripting languages.  The goal is to integrate
-fast, native-Go objects and slower but more flexible goop objects
+fast, native-Go objects and slower but more flexible Goop objects
 within the same program.
 
 Features
