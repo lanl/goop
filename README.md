@@ -87,10 +87,10 @@ favorite browser.
 Performance
 -----------
 
-Goop programs pay for their flexibility in terms of performance.
-Hence, Goop is unfortunately extremely slow.  To determine just how
-bad the performance is on your computer, you can run the
-microbenchmarks included in
+Goop is unfortunately extremely slow.  Goop programs have to pay for
+their flexibility in terms of performance.  To determine just how bad
+the performance is on your computer, you can run the microbenchmarks
+included in
 [`goop_test.go`](http://github.com/losalamos/goop/blob/master/goop_test.go):
 
 <pre>
