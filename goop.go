@@ -269,7 +269,7 @@ func (obj *Object) Get(memberName string) (value interface{}) {
 // Unset removes a member from an object.  This function always
 // succeeds, even if the member did not previously exist.
 func (obj *Object) Unset(memberName string) {
-	obj.Implementation.symbolTable[memberName] = 0, false
+	delete(obj.Implementation.symbolTable, memberName)
 }
 
 // Contents returns a map of all members of an object (useful for
