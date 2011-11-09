@@ -152,8 +152,8 @@ invocation to a function that returns a constant value.
 */
 package goop
 
+import "errors"
 import "reflect"
-import "os"
 
 // An object is represented internally as a struct.
 type internal struct {
@@ -162,7 +162,7 @@ type internal struct {
 }
 
 // A failed attempt to locate an object member returns NotFound.
-var NotFound = os.NewError("Member not found")
+var NotFound = errors.New("Member not found")
 
 // A goop Object is a lot like a JavaScript object in that it uses
 // prototype-based inheritance instead of a class hierarchy.

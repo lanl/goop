@@ -101,11 +101,11 @@ On my computer, I get results like the following (reformatted for
 clarity):
 
 <pre>
-    goop.BenchmarkNativeFNV1          2000000000       4.60 ns/op
-    goop.BenchmarkNativeFNV1Closure   1000000000       7.55 ns/op
-    goop.BenchmarkGoopFNV1              50000000     210    ns/op
-    goop.BenchmarkMoreGoopFNV1           5000000    1596    ns/op
-    goop.BenchmarkEvenMoreGoopFNV1       1000000    5094    ns/op
+    goop.BenchmarkNativeFNV1          2000000000       2.94 ns/op
+    goop.BenchmarkNativeFNV1Closure   1000000000       6.11 ns/op
+    goop.BenchmarkGoopFNV1              50000000     203    ns/op
+    goop.BenchmarkMoreGoopFNV1           5000000    1425    ns/op
+    goop.BenchmarkEvenMoreGoopFNV1       1000000    4594    ns/op
 </pre>
 
 See
@@ -138,7 +138,7 @@ for the complete source code for those benchmarks.  Basically,
 Another way to interpret the data shown above is that, on my computer
 at least, a function closure costs about 3 ns; `Get` and `Set` each
 cost approximately 100 ns; a `Call` of a nullary function costs about
-1400 ns; and type-dependent dispatch costs an additional 3500 ns.
+1200 ns; and type-dependent dispatch costs an additional 3200 ns.
 
 How does Goop compare to various scripting languages?  Not well, at
 least for `BenchmarkMoreGoopFNV1` and its equivalents in other
@@ -161,8 +161,8 @@ write to a data field):
     <td style="text-align: right">1613</td>
   </tr>
   <tr style="background-color: yellow">
-    <td>Go weekly.2011-09-07 + Goop</td>
-    <td style="text-align: right">1596</td>
+    <td>Go weekly.2011-11-09 + Goop</td>
+    <td style="text-align: right">1425</td>
   </tr>
   <tr>
     <td>Perl 5.10.1</td>
