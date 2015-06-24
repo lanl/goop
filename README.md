@@ -137,6 +137,8 @@ License
 
 Goop is provided under a BSD-ish license with a "modifications must be indicated" clause.  See <http://github.com/losalamos/goop/blob/master/LICENSE> for the full text.
 
+Los Alamos National Security, LLC (LANS) owns the copyright to Goop, a component of the LANL Go Suite (identified internally as LA-CC-11-056).
+
 Author
 ------
 
