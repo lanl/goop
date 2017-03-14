@@ -1,6 +1,8 @@
 Goop
 ====
 
+[![GoDoc](https://godoc.org/github.com/lanl/goop?status.svg)](https://godoc.org/github.com/lanl/goop) [![Go Report Card](https://goreportcard.com/badge/github.com/lanl/goop)](https://goreportcard.com/badge/github.com/lanl/goop)
+
 Description
 -----------
 
