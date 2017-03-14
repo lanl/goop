@@ -77,7 +77,7 @@ invocation to a function that returns a constant value.
 
  package main
 
- import "github.com/losalamos/goop"
+ import "github.com/lanl/goop"
  import "fmt"
  import "sort"
 

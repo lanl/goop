@@ -1,7 +1,7 @@
 Goop
 ====
 
-[![GoDoc](https://godoc.org/github.com/lanl/goop?status.svg)](https://godoc.org/github.com/lanl/goop) [![Go Report Card](https://goreportcard.com/badge/github.com/lanl/goop)](https://goreportcard.com/badge/github.com/lanl/goop)
+[![GoDoc](https://godoc.org/github.com/lanl/goop?status.svg)](https://godoc.org/github.com/lanl/goop) [![Go Report Card](https://goreportcard.com/badge/github.com/lanl/goop)](https://goreportcard.com/report/github.com/lanl/goop)
 
 Description
 -----------
@@ -31,18 +31,18 @@ Installation
 Install Goop with [`go get`](https://golang.org/cmd/go/#hdr-Download_and_install_packages_and_dependencies):
 
 <pre>
-    go get github.com/losalamos/goop
+    go get github.com/lanl/goop
 </pre>
 
 Documentation
 -------------
 
-Pre-built documentation for the Goop API is available online at <http://godoc.org/github.com/losalamos/goop>, courtesy of [GoDoc](http://godoc.org/).
+Pre-built documentation for the Goop API is available online at <http://godoc.org/github.com/lanl/goop>, courtesy of [GoDoc](http://godoc.org/).
 
 Once you install Goop, you can view the API locally with [`godoc`](http://golang.org/cmd/godoc/), for example by running
 
 <pre>
-    godoc github.com/losalamos/goop
+    godoc github.com/lanl/goop
 </pre>
 
 to display the Goop documentation on screen or by running
@@ -51,7 +51,7 @@ to display the Goop documentation on screen or by running
     godoc -http=:6060
 </pre>
 
-to start a local Web server then viewing the HTML-formatted documentation at <http://localhost:6060/pkg/github.com/losalamos/goop/> in your favorite browser.
+to start a local Web server then viewing the HTML-formatted documentation at <http://localhost:6060/pkg/github.com/lanl/goop/> in your favorite browser.
 
 Performance
 -----------
@@ -60,10 +60,10 @@ Goop is unfortunately extremely slow.  Goop programs have to pay for
 their flexibility in terms of performance.  To determine just how bad
 the performance is on your computer, you can run the microbenchmarks
 included in
-[`goop_test.go`](http://github.com/losalamos/goop/blob/master/goop_test.go):
+[`goop_test.go`](http://github.com/lanl/goop/blob/master/goop_test.go):
 
 <pre>
-    go test -bench=. -benchtime=5s github.com/losalamos/goop
+    go test -bench=. -benchtime=5s github.com/lanl/goop
 </pre>
 
 On my computer, I get results like the following (reformatted for
@@ -77,7 +77,7 @@ clarity):
     BenchmarkEvenMoreGoopFNV1          5000000              2517    ns/op
 </pre>
 
-See [`goop_test.go`](http://github.com/losalamos/goop/blob/master/goop_test.go) for the complete source code for those benchmarks.  Basically,
+See [`goop_test.go`](http://github.com/lanl/goop/blob/master/goop_test.go) for the complete source code for those benchmarks.  Basically,
 
 * `BenchmarkNativeFNV1` is native (i.e., non-Goop) Go code for computing a 64-bit [FNV-1 hash](http://isthe.com/chongo/tech/comp/fnv/) on a sequence of 0xFF bytes.  Each iteration ("op" in the performance results) comprises a nullary function call, a multiplication by a large prime number, and an exclusive or with an 0xFF byte.
 
@@ -137,7 +137,7 @@ In short, you'll want to do most of your coding in native Go and use Goop only w
 License
 -------
 
-Goop is provided under a BSD-ish license with a "modifications must be indicated" clause.  See <http://github.com/losalamos/goop/blob/master/LICENSE> for the full text.
+Goop is provided under a BSD-ish license with a "modifications must be indicated" clause.  See <http://github.com/lanl/goop/blob/master/LICENSE> for the full text.
 
 Los Alamos National Security, LLC (LANS) owns the copyright to Goop, a component of the LANL Go Suite (identified internally as LA-CC-11-056).
 
