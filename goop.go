@@ -1,8 +1,5 @@
-// Copyright (C) 2011, Los Alamos National Security, LLC.
-// Use of this source code is governed by a BSD-style license.
-
 /*
-The Goop (Go Object-Oriented Programming) package provides support for
+Package goop (Go Object-Oriented Programming) provides support for
 dynamic object-oriented programming constructs in Go, much like those
 that appear in various scripting languages.  The goal is to integrate
 fast, native-Go objects and slower but more flexible Goop objects
@@ -161,11 +158,11 @@ type internal struct {
 	prototypes  []Object               // List of other objects to search for members
 }
 
-// A failed attempt to locate an object member returns NotFound.
-var NotFound = errors.New("Member not found")
+// ErrNotFound is returned by a failed attempt to locate an object member.
+var ErrNotFound = errors.New("Member not found")
 
-// A goop Object is a lot like a JavaScript object in that it uses
-// prototype-based inheritance instead of a class hierarchy.
+// Object is a lot like a JavaScript object in that it uses prototype-based
+// inheritance instead of a class hierarchy.
 type Object struct {
 	Implementation *internal // Internal representation not exposed to the user
 }
@@ -255,10 +252,10 @@ func (obj *Object) Get(memberName string) (value interface{}) {
 
 	// We didn't find the given member locally.  Try each of our
 	// parents in turn.
-	value = NotFound
+	value = ErrNotFound
 	for _, parent := range obj.Implementation.prototypes {
 		parentValue := parent.Get(memberName)
-		if parentValue != NotFound {
+		if parentValue != ErrNotFound {
 			value = parentValue
 			return
 		}
@@ -327,7 +324,7 @@ func argumentSignature(argList []interface{}) string {
 // unique argument-type signature.  When a MetaFunction is invoked, it
 // accepts arbitrary inputs and returns arbitrary outputs (bundled
 // into a slice).  On failure to find a matching signature, a
-// singleton slice containing NotFound is returned.
+// singleton slice containing ErrNotFound is returned.
 type MetaFunction func(varArgs ...interface{}) (funcResult []interface{})
 
 // CombineFunctions combines multiple functions into a single
@@ -341,7 +338,7 @@ func CombineFunctions(functions ...interface{}) MetaFunction {
 		// Find the function in the dispatch map.
 		funcIface, ok := dispatchMap[argumentSignature(varArgs)]
 		if !ok {
-			return []interface{}{NotFound}
+			return []interface{}{ErrNotFound}
 		}
 
 		// Invoke the function.
@@ -364,14 +361,14 @@ func CombineFunctions(functions ...interface{}) MetaFunction {
 }
 
 // Call invokes a method on an object and returns the method's return
-// values as a slice.  Call returns a slice of the singleton NotFound
+// values as a slice.  Call returns a slice of the singleton ErrNotFound
 // if the method could not be found.
 func (obj *Object) Call(methodName string, arguments ...interface{}) []interface{} {
 	// Construct a function and its arguments, using Get to
 	// automatically search parent objects if necessary.
 	userFuncIface := obj.Get(methodName)
-	if userFuncIface == NotFound {
-		return []interface{}{NotFound}
+	if userFuncIface == ErrNotFound {
+		return []interface{}{ErrNotFound}
 	}
 	userFunc := reflect.ValueOf(userFuncIface)
 	userFuncArgs := make([]reflect.Value, len(arguments)+1)

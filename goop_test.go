@@ -1,17 +1,17 @@
-// Copyright (C) 2011, Los Alamos National Security, LLC.
-// Use of this source code is governed by a BSD-style license.
-
 // This file ensures that the goop package is behaving itself properly.
 
-package goop
+package goop_test
 
-import "testing"
-import "fmt"
+import (
+	"fmt"
+	"github.com/lanl/goop"
+	"testing"
+)
 
 // Test setting and retrieving a scalar value.
 func TestSimpleValues(t *testing.T) {
 	value := 123
-	var obj Object = New()
+	obj := goop.New()
 	obj.Set("x", value)
 	x := obj.Get("x").(int)
 	if x != value {
@@ -22,7 +22,7 @@ func TestSimpleValues(t *testing.T) {
 // Test multiply setting and retrieving a scalar value.
 func TestMultipleAssign(t *testing.T) {
 	value := 123
-	var obj Object = New()
+	obj := goop.New()
 	obj.Set("x", value)
 	value *= 2
 	obj.Set("x", value)
@@ -34,9 +34,9 @@ func TestMultipleAssign(t *testing.T) {
 
 // Test retrieving a nonexistent scalar value.
 func TestNonexistent(t *testing.T) {
-	var obj Object = New()
+	obj := goop.New()
 	x := obj.Get("bogus")
-	if x != NotFound {
+	if x != goop.ErrNotFound {
 		t.Fatalf("Expectedly found member \"bogus\"")
 	}
 }
@@ -44,15 +44,15 @@ func TestNonexistent(t *testing.T) {
 // Test creating and invoking a do-nothing method with no function
 // arguments or return value.
 func TestDoNothingFunction(t *testing.T) {
-	var obj Object = New()
-	obj.Set("doNothing", func(self Object) {})
+	obj := goop.New()
+	obj.Set("doNothing", func(self goop.Object) {})
 	obj.Call("doNothing")
 }
 
 // Test invoking a method that returns its argument doubled.
 func TestDoubleFunction(t *testing.T) {
-	var obj Object = New()
-	obj.Set("doubleIt", func(self Object, x int) int { return x * 2 })
+	obj := goop.New()
+	obj.Set("doubleIt", func(self goop.Object, x int) int { return x * 2 })
 	value := 123
 	result := obj.Call("doubleIt", value)[0].(int)
 	if result != value*2 {
@@ -62,10 +62,10 @@ func TestDoubleFunction(t *testing.T) {
 
 // Test invoking a method that modifies object state.
 func TestModifyObj(t *testing.T) {
-	var obj Object = New()
+	obj := goop.New()
 	value := 100
 	obj.Set("x", value)
-	obj.Set("doubleX", func(self Object) {
+	obj.Set("doubleX", func(self goop.Object) {
 		self.Set("x", self.Get("x").(int)*2)
 	})
 	obj.Call("doubleX")
@@ -78,29 +78,29 @@ func TestModifyObj(t *testing.T) {
 // Test iterating over all members.
 func TestIteration(t *testing.T) {
 	// Add various datatypes to an object.
-	var obj Object = New()
-	v_int := uint(2520)
-	v_fp := float64(867.5309)
-	v_str := "Yow!"
-	obj.Set("integer", v_int)
-	obj.Set("fp", v_fp)
-	obj.Set("string", v_str)
-	obj.Set("function", func() uint { return v_int })
+	obj := goop.New()
+	vInt := uint(2520)
+	vFp := float64(867.5309)
+	vStr := "Yow!"
+	obj.Set("integer", vInt)
+	obj.Set("fp", vFp)
+	obj.Set("string", vStr)
+	obj.Set("function", func() uint { return vInt })
 
 	// Define a generic test for the above.
-	test_contents := func(key string, value interface{}) {
+	testContents := func(key string, value interface{}) {
 		switch key {
 		case "integer":
-			if value.(uint) != v_int {
-				t.Fatalf("Expected %d but saw %v", v_int, value)
+			if value.(uint) != vInt {
+				t.Fatalf("Expected %d but saw %v", vInt, value)
 			}
 		case "fp":
-			if value.(float64) != v_fp {
-				t.Fatalf("Expected %.4f but saw %v", v_fp, value)
+			if value.(float64) != vFp {
+				t.Fatalf("Expected %.4f but saw %v", vFp, value)
 			}
 		case "string":
-			if value.(string) != v_str {
-				t.Fatalf("Expected \"%s\" but saw %v", v_str, value)
+			if value.(string) != vStr {
+				t.Fatalf("Expected \"%s\" but saw %v", vStr, value)
 			}
 		default:
 			t.Fatalf("Did not expect key \"%s\", value %v", key, value)
@@ -109,28 +109,28 @@ func TestIteration(t *testing.T) {
 
 	// Test Contents(false).
 	for key, value := range obj.Contents(false) {
-		test_contents(key, value)
+		testContents(key, value)
 	}
 
 	// Test Contents(true).
 	for key, value := range obj.Contents(true) {
 		if key == "function" {
-			if funcResult := value.(func() uint)(); funcResult != v_int {
-				t.Fatalf("Expected function \"%s\" to return %d, not %v", key, v_int, funcResult)
+			if funcResult := value.(func() uint)(); funcResult != vInt {
+				t.Fatalf("Expected function \"%s\" to return %d, not %v", key, vInt, funcResult)
 			}
 		} else {
-			test_contents(key, value)
+			testContents(key, value)
 		}
 	}
 }
 
 // Test constructors.
 func TestConstructors(t *testing.T) {
-	happyClass := func(self Object, someVal int) {
+	happyClass := func(self goop.Object, someVal int) {
 		self.Set("val", someVal)
 	}
 	value := 524287
-	happyObj := New(happyClass, value)
+	happyObj := goop.New(happyClass, value)
 	if result := happyObj.Get("val"); result.(int) != value {
 		t.Fatalf("Expected %d but saw %v", value, result)
 	}
@@ -139,18 +139,18 @@ func TestConstructors(t *testing.T) {
 // Test single-parent inheritance.
 func TestSingleParentInheritance(t *testing.T) {
 	// Test 1: Ensure that Get() finds members in an object's parent.
-	point2D_class := func(self Object, x, y int) {
+	point2DClass := func(self goop.Object, x, y int) {
 		// Construct a 2-D point.
 		self.Set("x", x)
 		self.Set("y", y)
 	}
-	point3D_class := func(self Object, x, y, z int) {
+	point3DClass := func(self goop.Object, x, y, z int) {
 		// Construct a 3-D point.
-		super := New(point2D_class, x, y)
+		super := goop.New(point2DClass, x, y)
 		self.SetSuper(super)
 		self.Set("z", z)
 	}
-	point3D := New(point3D_class, 2, 4, 8)
+	point3D := goop.New(point3DClass, 2, 4, 8)
 	expectedTotal := 2 + 4 + 8
 	total := point3D.Get("x").(int) + point3D.Get("y").(int) + point3D.Get("z").(int)
 	if total != expectedTotal {
@@ -174,19 +174,19 @@ func TestSingleParentInheritance(t *testing.T) {
 
 // Test dynamically changing an object's lineage.
 func TestSuperChange(t *testing.T) {
-	parentType1 := func(self Object) {
+	parentType1 := func(self goop.Object) {
 		self.Set("one", 11111)
 	}
-	parentObj1 := New(parentType1)
-	parentType2 := func(self Object) {
+	parentObj1 := goop.New(parentType1)
+	parentType2 := func(self goop.Object) {
 		self.Set("two", 22222)
 	}
-	parentObj2 := New(parentType2)
-	childType := func(self Object) {
+	parentObj2 := goop.New(parentType2)
+	childType := func(self goop.Object) {
 		self.SetSuper(parentObj1)
 		self.Set("me", 33333)
 	}
-	childObj := New(childType)
+	childObj := goop.New(childType)
 	if result := childObj.Get("me").(int); result != 33333 {
 		t.Fatalf("Expected %d but saw %v", 33333, result)
 	}
@@ -197,8 +197,8 @@ func TestSuperChange(t *testing.T) {
 	if result := childObj.Get("me").(int); result != 33333 {
 		t.Fatalf("Expected %d but saw %v", 33333, result)
 	}
-	if result := childObj.Get("one"); result != NotFound {
-		t.Fatalf("Expected %#v but saw %v", NotFound, result)
+	if result := childObj.Get("one"); result != goop.ErrNotFound {
+		t.Fatalf("Expected %#v but saw %v", goop.ErrNotFound, result)
 	}
 	if result := childObj.Get("two").(int); result != 22222 {
 		t.Fatalf("Expected %d but saw %v", 22222, result)
@@ -213,11 +213,11 @@ func TestSuperChange(t *testing.T) {
 func TestDispatch(t *testing.T) {
 	// Create an object with an "add" method that does different
 	// things based on its arguments.
-	adderObj := New()
-	adderObj.Set("add", CombineFunctions(
-		func(self Object, x, y int) int { return 10*x + y },
-		func(self Object, x, y float64) float64 { return 100.0*x + y },
-		func(self Object, a int) int { return -a }))
+	adderObj := goop.New()
+	adderObj.Set("add", goop.CombineFunctions(
+		func(self goop.Object, x, y int) int { return 10*x + y },
+		func(self goop.Object, x, y float64) float64 { return 100.0*x + y },
+		func(self goop.Object, a int) int { return -a }))
 
 	// Test out the "add" method.
 	if result := adderObj.Call("add", 77); result[0].(int) != -77 {
@@ -229,25 +229,25 @@ func TestDispatch(t *testing.T) {
 	if result := adderObj.Call("add", 5.4, 3.2); result[0].(float64) != 543.2 {
 		t.Fatalf("Expected 543.2 but received %#v", result)
 	}
-	if result := adderObj.Call("add", 5.4); result[0] != NotFound {
-		t.Fatalf("Expected NotFound but received %#v", result)
+	if result := adderObj.Call("add", 5.4); result[0] != goop.ErrNotFound {
+		t.Fatalf("Expected ErrNotFound but received %#v", result)
 	}
 }
 
-// The following is used by native_fnv1.  We hope that making it
+// The following is used by nativeFNV1.  We hope that making it
 // exportable will prevent the compiler from optimizing it away.
-var Native_HashVal uint64 = 14695981039346656037
+var NativeHashVal uint64 = 14695981039346656037
 
 // Apply the FNV-1 hash to a single 0xFF octet.
-func native_fnv1() {
-	Native_HashVal *= 1099511628211
-	Native_HashVal ^= 0xff
+func nativeFNV1() {
+	NativeHashVal *= 1099511628211
+	NativeHashVal ^= 0xff
 }
 
 // Measure the speed of modifying a variable using native code.
 func BenchmarkNativeFNV1(b *testing.B) {
 	for i := b.N; i > 0; i-- {
-		native_fnv1()
+		nativeFNV1()
 	}
 }
 
@@ -274,7 +274,7 @@ func BenchmarkNativeFNV1Closure(b *testing.B) {
 // Measure the speed of modifying a variable using Goop's Get and Set methods.
 func BenchmarkGoopFNV1(b *testing.B) {
 	b.StopTimer()
-	fnv1Obj := New()
+	fnv1Obj := goop.New()
 	fnv1Obj.Set("hashVal", uint64(14695981039346656037))
 	fnv1 := func() {
 		hashVal := fnv1Obj.Get("hashVal").(uint64)
@@ -292,9 +292,9 @@ func BenchmarkGoopFNV1(b *testing.B) {
 // and Call methods.
 func BenchmarkMoreGoopFNV1(b *testing.B) {
 	b.StopTimer()
-	fnv1Obj := New()
+	fnv1Obj := goop.New()
 	fnv1Obj.Set("hashVal", uint64(14695981039346656037))
-	fnv1Obj.Set("fnv1", func(this Object) {
+	fnv1Obj.Set("fnv1", func(this goop.Object) {
 		hashVal := this.Get("hashVal").(uint64)
 		hashVal *= 1099511628211
 		hashVal ^= 0xff
@@ -310,10 +310,10 @@ func BenchmarkMoreGoopFNV1(b *testing.B) {
 // Call, and CombineFunctions methods.
 func BenchmarkEvenMoreGoopFNV1(b *testing.B) {
 	b.StopTimer()
-	fnv1Obj := New()
+	fnv1Obj := goop.New()
 	fnv1Obj.Set("hashVal", uint64(14695981039346656037))
-	fnv1Obj.Set("fnv1", CombineFunctions(
-		func(this Object) {
+	fnv1Obj.Set("fnv1", goop.CombineFunctions(
+		func(this goop.Object) {
 			hashVal := this.Get("hashVal").(uint64)
 			hashVal *= 1099511628211
 			hashVal ^= 0xff
