@@ -137,7 +137,7 @@ In short, you'll want to do most of your coding in native Go and use Goop only w
 License
 -------
 
-Goop is provided under a BSD-ish license with a "modifications must be indicated" clause.  See <http://github.com/lanl/goop/blob/master/LICENSE> for the full text.
+Goop is provided under a BSD-ish license with a "modifications must be indicated" clause.  See <http://github.com/lanl/goop/blob/master/LICENSE.md> for the full text.
 
 Los Alamos National Security, LLC (LANS) owns the copyright to Goop, a component of the LANL Go Suite (identified internally as LA-CC-11-056).
 
