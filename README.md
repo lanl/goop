@@ -1,7 +1,7 @@
 Goop
 ====
 
-[![GoDoc](https://godoc.org/github.com/lanl/goop?status.svg)](https://godoc.org/github.com/lanl/goop) [![Go Report Card](https://goreportcard.com/badge/github.com/lanl/goop)](https://goreportcard.com/report/github.com/lanl/goop)
+[![Go Reference](https://pkg.go.dev/badge/github.com/lanl/goop.svg)](https://pkg.go.dev/github.com/lanl/goop) [![Go Report Card](https://goreportcard.com/badge/github.com/lanl/goop)](https://goreportcard.com/report/github.com/lanl/goop)
 
 Description
 -----------
