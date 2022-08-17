@@ -28,30 +28,12 @@ Goop provides the following features, which are borrowed from an assortment of o
 Installation
 ------------
 
-Install Goop with [`go get`](https://golang.org/cmd/go/#hdr-Download_and_install_packages_and_dependencies):
-
-<pre>
-    go get github.com/lanl/goop
-</pre>
+Goop is a Go module and therefore does not need to be installed manually.  Simply import it as `github.com/lanl/goop`, and `go build` should download and install the code automatically.
 
 Documentation
 -------------
 
-Pre-built documentation for the Goop API is available online at <http://godoc.org/github.com/lanl/goop>, courtesy of [GoDoc](http://godoc.org/).
-
-Once you install Goop, you can view the API locally with [`godoc`](http://golang.org/cmd/godoc/), for example by running
-
-<pre>
-    godoc github.com/lanl/goop
-</pre>
-
-to display the Goop documentation on screen or by running
-
-<pre>
-    godoc -http=:6060
-</pre>
-
-to start a local Web server then viewing the HTML-formatted documentation at <http://localhost:6060/pkg/github.com/lanl/goop/> in your favorite browser.
+Pre-built documentation for the Goop API is available online at <https://pkg.go.dev/github.com/lanl/goop>.
 
 Performance
 -----------
