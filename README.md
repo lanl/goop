@@ -134,10 +134,14 @@ How does Goop compare to various scripting languages?  Not well, at least for `B
 
 In short, you'll want to do most of your coding in native Go and use Goop only when your application requires the extra flexibility that Goop provides.  Then, you should cache as many object members as possible in Go variables to reduce the number of `Get` and `Set` calls.
 
-License
--------
+Legal statement
+---------------
 
-Goop is provided under a BSD-ish license with a "modifications must be indicated" clause.  See <http://github.com/lanl/goop/blob/master/LICENSE.md> for the full text.
+Copyright © 2011, Triad National Security, LLC.  All rights reserved.
+
+This software was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration.  All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.  NEITHER THE GOVERNMENT NOR TRIAD NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce derivative works, such modified software should be clearly marked, so as not to confuse it with the version available from LANL.
+
+Goop is provided under a BSD 3-clause license.  See [the LICENSE file](http://github.com/lanl/goop/blob/master/LICENSE.md) for the full text.
 
 Triad National Security, LLC (Triad) owns the copyright to Goop, a component of the LANL Go Suite (identified internally as LA-CC-11-056).
 
